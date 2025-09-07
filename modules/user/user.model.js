@@ -86,6 +86,14 @@ const userSchema = new mongoose.Schema(
 
     phoneVerificationCode: {type :  String},
     phoneVerificationExpires: {type :  Date},
+
+
+     // For buyers
+    stripeCustomerId: { type: String },
+    defaultPaymentMethod: { type: String },
+
+    // For taskers
+    stripeConnectAccountId: { type: String },
   },
   { timestamps: true, versionKey : false }
 );

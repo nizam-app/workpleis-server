@@ -31,7 +31,6 @@ app.use('/api/v1/verifications',verificationRouter);
 app.use('/api/v1/conversations',conversationRouter);
 app.use('/api/v1/app',appRouter);
 
-
  
 app.use(globalErrorHandle);
 

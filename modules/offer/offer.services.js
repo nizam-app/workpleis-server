@@ -1,6 +1,7 @@
 import AppError from "../../utils/appError.js";
 import Conversation from "../conversation/conversation.model.js";
 import Task from "../task/task.model.js";
+import User from "../user/user.model.js";
 import Offer from "./offer.model.js";
 
 // Submit an offer
@@ -58,42 +59,86 @@ const getOffersForTaskService = async (taskId,clientId) => {
 
 // Accept offer (only client can accept offer)
 const acceptOfferService = async (offerId, clientId) => {
-  // Find the offer
+
+  // 1. Find the offer with its task
   const offer = await Offer.findById(offerId).populate("task");
   if (!offer) {
     throw new AppError(404, "Offer not found");
   }
 
   const task = offer.task;
+  if (!task) {
+    throw new AppError(404, "Associated task not found");
+  }
 
-  // Check if client is the owner of the task
+  // 2. Check client owns the task
   if (String(task.createdBy) !== String(clientId)) {
     throw new AppError(403, "You are not authorized to accept offers for this task");
   }
 
-  // Ensure the task is still open
+  // 3. Ensure the task is still open
   if (task.status !== "open") {
     throw new AppError(400, `Cannot accept offer. Task is already '${task.status}'.`);
   }
 
-  // Update the selected offer
+
+  // check client has stripe customer account 
+  const client = await User.findById(clientId);
+  if (!client.stripeCustomerId || !client.defaultPaymentMethod) {
+    throw new AppError(400, "Please add a valid payment method before accepting offers");
+  }
+
+  
+
+  // 4. Update offer and task status
   offer.status = "accepted";
   await offer.save();
 
-  // Mark task as assigned
   task.status = "assigned";
-  task.assignedTo = offer.task._id;
+  task.assignedTo = offer.jobSeeker; // FIX: should be jobSeeker, not task._id
   await task.save();
 
-  // Create conversation (idempotent via unique index)
+  // 5. Create conversation (idempotent)
   const conversation = await Conversation.findOneAndUpdate(
     { task: task._id, client: task.createdBy, jobSeeker: offer.jobSeeker },
-    {},                                      
+    {},
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
 
-  return {offer,task,conversation};
+  // --- 🔑 ESCROW FLOW STARTS HERE ---
+
+  // 6. Calculate fees
+  const { serviceFee, amountNet } = calcFees(offer.amount);
+
+  // 7. Create PaymentIntent in Stripe
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: offer.price * 100, // Stripe uses cents
+    currency: "usd",
+    customer: client.stripeCustomerId, // must exist in your User model
+    payment_method: client.defaultPaymentMethod, // must be attached already
+    confirm: true,
+    description: `Escrow for task ${task._id} and offer ${offer._id}`,
+  });
+
+  // 8. Save Escrow record
+  const escrow = await Escrow.create({
+    task: task._id,
+    offer: offer._id,
+    buyer: clientId,
+    jobSeeker: offer.jobSeeker,
+    currency: "usd",
+    amountGross: offer.amount,
+    serviceFee,
+    amountNet,
+    status: "HELD",
+    stripePaymentIntentId: paymentIntent.id
+  });
+
+
+  return { offer, task, conversation, escrow };
 };
+
+
 
 // Reject offer (only client can reject an offer)
 const rejectOfferService = async (offerId, clientId) => {

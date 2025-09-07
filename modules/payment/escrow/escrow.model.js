@@ -40,9 +40,14 @@ const EscrowSchema = new mongoose.Schema({
         enum: ['usd', 'eur', 'gbp', 'aud'], 
         default: 'usd' 
     },
-    amountGross: { 
+    amount: { 
         type: Number, 
-        required: [true, 'Gross amount is required'], 
+        required: [true, 'amount is required'], 
+        min: [1, 'Amount must be > 0'] 
+    },
+    jobSeekerReceives: { 
+        type: Number, 
+        required: [true, 'Job seeker receives amount is required'], 
         min: [1, 'Amount must be > 0'] 
     },
     serviceFee: { 
@@ -50,19 +55,12 @@ const EscrowSchema = new mongoose.Schema({
         required: [true, 'Service fee is required'], 
         min: [0, 'Service fee cannot be negative'] 
     },
-    amountNet: { 
-        type: Number, 
-        required: [true, 'Net amount is required'], 
-        min: [0, 'Net amount cannot be negative'] 
-    },
-
 
     status: { 
         type: String, 
         enum: EscrowStatus, index: true, 
         default: 'INIT' 
     },
-
 
     stripePaymentIntentId: { 
         type: String, index: true, 
@@ -81,8 +79,8 @@ EscrowSchema.index({ jobSeeker: 1, status: 1, createdAt: -1 });
 EscrowSchema.index({ task: 1, offer: 1 }, { unique: true });
 
 
-export default Escrow = mongoose.model('Escrow', EscrowSchema)
-
+const Escrow = mongoose.model('Escrow', EscrowSchema)
+export default Escrow;
 
 
 

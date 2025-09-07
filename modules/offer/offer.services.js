@@ -1,5 +1,7 @@
 import AppError from "../../utils/appError.js";
+import calculatePayment from "../../utils/calculateServiceFee.js";
 import Conversation from "../conversation/conversation.model.js";
+import Escrow from "../payment/escrow/escrow.model.js";
 import Task from "../task/task.model.js";
 import User from "../user/user.model.js";
 import Offer from "./offer.model.js";
@@ -59,83 +61,81 @@ const getOffersForTaskService = async (taskId,clientId) => {
 
 // Accept offer (only client can accept offer)
 const acceptOfferService = async (offerId, clientId) => {
-
-  // 1. Find the offer with its task
-  const offer = await Offer.findById(offerId).populate("task");
-  if (!offer) {
-    throw new AppError(404, "Offer not found");
-  }
+  // 1. Find the offer with task + jobSeeker
+  const offer = await Offer.findById(offerId).populate("task").populate("jobSeeker");
+  if (!offer) throw new AppError(404, "Offer not found");
 
   const task = offer.task;
-  if (!task) {
-    throw new AppError(404, "Associated task not found");
-  }
+  if (!task) throw new AppError(404, "Associated task not found");
 
-  // 2. Check client owns the task
+  // 2. Validate client owns task
   if (String(task.createdBy) !== String(clientId)) {
     throw new AppError(403, "You are not authorized to accept offers for this task");
   }
 
-  // 3. Ensure the task is still open
+  // 3. Ensure task is still open
   if (task.status !== "open") {
     throw new AppError(400, `Cannot accept offer. Task is already '${task.status}'.`);
   }
 
-
-  // check client has stripe customer account 
+  // 4. Validate client has Stripe customer + payment method
   const client = await User.findById(clientId);
   if (!client.stripeCustomerId || !client.defaultPaymentMethod) {
     throw new AppError(400, "Please add a valid payment method before accepting offers");
   }
 
-  
+  // --- 🔑 ESCROW FLOW STARTS HERE ---
 
-  // 4. Update offer and task status
+  // 5. Calculate service fee & payouts
+  const { clientPays, serviceFee, jobSeekerReceives } = calculatePayment(offer.amount);
+
+  // 6. Create PaymentIntent (escrow hold)
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: Math.round(clientPays * 100), // cents
+    currency: "usd",
+    customer: client.stripeCustomerId,
+    payment_method: client.defaultPaymentMethod,
+    confirm: true,
+    capture_method: "manual", // hold funds
+    metadata: {
+      taskId: task._id.toString(),
+      offerId: offer._id.toString(),
+      clientId: client._id.toString(),
+      jobSeekerId: offer.jobSeeker._id.toString(),
+      serviceFee: serviceFee.toString(),
+      taskerReceives: jobSeekerReceives.toString(),
+    },
+  });
+
+  // 7. Save Escrow record
+  const escrow = await Escrow.create({
+    task: task._id,
+    offer: offer._id,
+    client: client._id,
+    jobSeeker: offer.jobSeeker._id,
+    amount: clientPays,
+    serviceFee,
+    jobSeekerReceives,
+    stripePaymentIntentId: paymentIntent.id,
+    status: "HELD",
+  });
+
+  // 8. Update Offer + Task
   offer.status = "accepted";
   await offer.save();
 
   task.status = "assigned";
-  task.assignedTo = offer.jobSeeker; // FIX: should be jobSeeker, not task._id
+  task.assignedTo = offer.jobSeeker._id;
   await task.save();
 
-  // 5. Create conversation (idempotent)
+  // 9. Ensure conversation exists
   const conversation = await Conversation.findOneAndUpdate(
     { task: task._id, client: task.createdBy, jobSeeker: offer.jobSeeker },
     {},
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
 
-  // --- 🔑 ESCROW FLOW STARTS HERE ---
-
-  // 6. Calculate fees
-  const { serviceFee, amountNet } = calcFees(offer.amount);
-
-  // 7. Create PaymentIntent in Stripe
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: offer.price * 100, // Stripe uses cents
-    currency: "usd",
-    customer: client.stripeCustomerId, // must exist in your User model
-    payment_method: client.defaultPaymentMethod, // must be attached already
-    confirm: true,
-    description: `Escrow for task ${task._id} and offer ${offer._id}`,
-  });
-
-  // 8. Save Escrow record
-  const escrow = await Escrow.create({
-    task: task._id,
-    offer: offer._id,
-    buyer: clientId,
-    jobSeeker: offer.jobSeeker,
-    currency: "usd",
-    amountGross: offer.amount,
-    serviceFee,
-    amountNet,
-    status: "HELD",
-    stripePaymentIntentId: paymentIntent.id
-  });
-
-
-  return { offer, task, conversation, escrow };
+  return { offer, task, escrow, conversation };
 };
 
 

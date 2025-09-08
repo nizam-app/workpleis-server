@@ -51,7 +51,7 @@ const taskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["open", "assigned", "in_progress", "completed"],
+      enum: ["open", "assigned", "in_progress","delivered", "completed"],
       default: "open",
     },
     createdBy: {

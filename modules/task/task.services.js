@@ -135,7 +135,7 @@ const requestCompletionService = async (taskId, jobSeekerId) => {
   }
 
   // 4. Update task status → delivered
-  task.status = "completed";
+  task.status = "delivered";
   task.deliveredAt = new Date();
   await task.save();
 
@@ -162,6 +162,92 @@ const requestCompletionService = async (taskId, jobSeekerId) => {
       amount: escrow.amount,
     },
   };
+};
+
+const clientApprovalService = async (taskId, clientId,action) => {
+  // 1. Find task
+  const task = await Task.findById(taskId).populate("createdBy").populate("assignedTo");
+  if (!task){ 
+    throw new AppError(404, "Task not found");
+  }
+
+  // 2. Ensure this client owns the task
+  if (String(task.createdBy._id) !== String(clientId)) {
+    throw new AppError(403, "You are not authorized to approve/reject this task");
+  }
+
+  // 3. Ensure task is delivered
+  if (task.status !== "delivered") {
+    throw new AppError(400, `Task must be 'delivered' before approval, currently '${task.status}'.`);
+  }
+
+  // 4. Find escrow
+  const escrow = await Escrow.findOne({ task: task._id, status: "RELEASE_PENDING" });
+  if (!escrow){
+     throw new AppError(404, "No pending escrow found for this task");
+  }
+
+  // --- ACCEPT DELIVERY ---
+
+  if (action === "accept") {
+    // Capture PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.capture(escrow.stripePaymentIntentId);
+
+    // Calculate fees
+    const { clientPays, serviceFee, taskerReceives } = calculatePayment(escrow.amount);
+
+    // Update escrow
+    escrow.status = "RELEASED";
+    escrow.releasedAt = new Date();
+    escrow.serviceFee = serviceFee;
+    escrow.save();
+
+    // Update task
+    task.status = "completed";
+    await task.save();
+
+    // Credit Tasker wallet
+    const taskerWallet = await Wallet.findOneAndUpdate(
+      { user: task.assignedTo._id },
+      { $inc: { balance: taskerReceives, totalEarned: taskerReceives } },
+      { new: true, upsert: true }
+    );
+
+    // Record ledger
+    await Ledger.create({
+      user: task.assignedTo._id,
+      type: "credit",
+      amount: taskerReceives,
+      balanceAfter: taskerWallet.balance,
+      reference: task._id,
+      description: `Payment released for task: ${task.title}`,
+    });
+
+    return {
+      message: "Task approved. Payment released to Tasker",
+      task: { id: task._id, status: task.status },
+      escrow: { id: escrow._id, status: escrow.status },
+    };
+  }
+
+   // ---  REJECT DELIVERY ---
+  if (action === "reject") {
+    escrow.status = "DISPUTED";
+    escrow.disputeReason = reason || "No reason provided";
+    escrow.disputedAt = new Date();
+    await escrow.save();
+
+    task.status = "disputed";
+    await task.save();
+
+    return {
+      message: "Task rejected. Escrow is now in dispute",
+      task: { id: task._id, status: task.status },
+      escrow: { id: escrow._id, status: escrow.status },
+    };
+  }
+
+  throw new AppError(400, "Invalid action. Must be 'accept' or 'reject'");
 };
 
 

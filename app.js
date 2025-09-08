@@ -12,6 +12,7 @@ import forgotPasswordRouter from './routes/forgotPassword.router.js';
 import verificationRouter from './routes/verification.router.js';
 import conversationRouter from './routes/conversation.router.js';
 import appRouter from './routes/app.router.js';
+import specialTaskRouter from './routes/specialTask.router.js';
 
 
 
@@ -24,6 +25,7 @@ app.use(cors())
 app.use('/api/v1/user',userRouter);
 app.use('/api/v1/auth',authRouter);
 app.use('/api/v1/tasks',taskRouter);
+app.use('/api/v1/special/tasks',specialTaskRouter);
 app.use('/api/v1/offers',offerRouter);
 app.use('/api/v1/reviews',reviewRouter);
 app.use('/api/v1/forgot/password',forgotPasswordRouter);

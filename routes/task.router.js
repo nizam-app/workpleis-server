@@ -17,6 +17,7 @@ taskRouter.delete('/:id',authentication('CLIENT','ADMIN'),taskControllers.delete
 taskRouter.get('/client/my-tasks',authentication('CLIENT'),taskControllers.getTasksByClientController);
 taskRouter.get('/search/jobs',taskControllers.searchTaskByTitleController);
 
+// taskRouter.post('/:id/complete',authentication('CLIENT'),taskControllers.createTaskController);
 
 
 

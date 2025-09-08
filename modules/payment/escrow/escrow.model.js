@@ -71,6 +71,9 @@ const EscrowSchema = new mongoose.Schema({
         index: true, 
         default: null 
     }, // set when paid out
+    deliveredAt : {
+        type : Date
+    }
 }, { timestamps: true, versionKey: false });
 
 

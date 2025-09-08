@@ -1,5 +1,6 @@
 import AppError from "../../utils/appError.js";
 import Offer from "../offer/offer.model.js";
+import Escrow from "../payment/escrow/escrow.model.js";
 import Task from "./task.model.js";
 
 
@@ -114,6 +115,56 @@ const searchTaskByTaskTitleServices = async(title)=>{
   }
 
 
+//task complete 
+const requestCompletionService = async (taskId, jobSeekerId) => {
+  // 1. Find task
+  const task = await Task.findById(taskId).populate("assignedTo");
+  if (!task) {
+    throw new AppError(404, "Task not found");
+  }
+
+  // 2. Ensure the job seeker is assigned to this task
+  if (!task.assignedTo || String(task.assignedTo._id) !== String(jobSeekerId)) {
+    throw new AppError(403, "You are not authorized to request completion for this task");
+  }
+
+  // 3. Ensure task is in correct state
+  if (!["assigned", "in_progress"].includes(task.status)) {
+    throw new AppError(400, `Cannot request completion. Task must be 'assigned' or 'in_progress', currently '${task.status}'.`
+    );
+  }
+
+  // 4. Update task status → delivered
+  task.status = "completed";
+  task.deliveredAt = new Date();
+  await task.save();
+
+  // 5. Update escrow status → RELEASE_PENDING
+  const escrow = await Escrow.findOne({ task: task._id, status: "HELD" });
+  if (!escrow) {
+    throw new AppError(404, "Active escrow not found for this task");
+  }
+
+  escrow.status = "RELEASE_PENDING"; // waiting for Buyer approval
+  escrow.deliveredAt = new Date();
+  await escrow.save();
+
+  // 6. Return minimal safe data
+  return {
+    task: {
+      id: task._id,
+      title: task.title,
+      status: task.status,
+    },
+    escrow: {
+      id: escrow._id,
+      status: escrow.status,
+      amount: escrow.amount,
+    },
+  };
+};
+
+
 
 
 export const taskServices = {
@@ -123,5 +174,6 @@ export const taskServices = {
     updateTaskService,
     deleteTaskService,
     getTasksByClientService,
-    searchTaskByTaskTitleServices
+    searchTaskByTaskTitleServices,
+    requestCompletionService
 }

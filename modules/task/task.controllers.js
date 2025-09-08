@@ -101,7 +101,24 @@ const searchTaskByTitleController = asyncHandler(async (req, res) => {
             count : data.length
            }
        });
-})
+});
+
+
+const requestCompletionController = asyncHandler(async (req, res) => {
+  const jobSeekerId = req.user.id;
+  const taskId = req.params.id;
+
+  const data = await taskServices.requestCompletionService(taskId,jobSeekerId);
+  sendResponse(res,{
+           statusCode : 200,
+           success : true,
+           message :  "Completion requested successfully",
+           data: {
+            escrow : data.escrow,
+            task : data.task
+            }
+       });
+});
 
 
 export const taskControllers ={

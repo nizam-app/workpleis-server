@@ -8,7 +8,6 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Name is required"],
       trim: true,
       minlength: 2,
       maxlength: 100,
@@ -22,15 +21,17 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      minlength: 6,
-      required : function(){
-            return !this.isGoogle;
-     }, 
+      minlength: 6
     },
     role: {
       type: String,
-      enum: ["CLIENT", "JOB_SEEKER", "ADMIN"],
-      default: "JOB_SEEKER",
+      enum: ["CLIENT", "SERVICE_PROVIDER", "ADMIN"],
+      default: "SERVICE_PROVIDER",
+    },
+    subRole: {
+      type: String,
+      enum: ["INDIVIDUAL", "BUSINESS"],
+      default: "INDIVIDUAL",
     },
     address: {
       type: mongoose.Schema.Types.ObjectId,
@@ -49,7 +50,15 @@ const userSchema = new mongoose.Schema(
       max: 5,
       default: 0,
     },
-    
+isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: String,
+      enum: ["ACTIVE", "INACTIVE", "BLOCKED"],
+      default: "ACTIVE",
+    },
     isGoogle: {
       type: Boolean,
       default: false,
@@ -67,7 +76,7 @@ const userSchema = new mongoose.Schema(
       default: false 
     },
     isVerifiedIdentity: { 
-      type: Boolean, 
+      type: Boolean,  
       default: false 
     },
 
@@ -77,9 +86,9 @@ const userSchema = new mongoose.Schema(
     identityBackDoc: {
       type: String,  
     },
-
-    identitySessionId : {type : String},
-
+    businessIdentityDoc :{
+      type : [String]
+    },
 
     emailVerificationCode: {type : String},
     emailVerificationExpires: {type : Date},

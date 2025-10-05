@@ -2,6 +2,140 @@ import bcrypt from 'bcryptjs';
 import { envLoader } from "../../config/envs.js";
 import AppError from "../../utils/appError.js";
 import User from "./user.model.js";
+import { generateVerificationCodeAndExpires } from '../../utils/generateCodeExpires.js';
+
+
+// create user and email verification
+const createUserWithEmailService =async(payload)=>{
+    const {email,role,subRole} = payload;
+    if(role === 'ADMIN'){
+            throw new AppError(403,'User role is not acceptable');
+    }
+
+    const isUserExist = await User.findOne({email});
+    let user;
+    const {code,expiresAt} = generateVerificationCodeAndExpires();
+    if(isUserExist){ 
+           isUserExist.emailVerificationCode = code
+          isUserExist.emailVerificationExpires = expiresAt
+
+         await isUserExist.save();
+     user = isUserExist;
+    }else{
+        user = await User.create({
+            email,
+            role,
+            subRole,
+            emailVerificationCode : code,
+            emailVerificationExpires : expiresAt
+        });
+    }
+  
+    return user;
+}
+const createUserWithEmalVerificationService =async(payload)=>{
+    const {email,code} = payload;
+
+    const isUserExist = await User.findOne({email});
+ 
+    if(isUserExist.emailVerificationExpires < Date.now() ){
+        throw new AppError(401,"Email verification code Expired!");
+    }
+
+    if(isUserExist.emailVerificationCode !== code){
+        throw new AppError(401,"Email Verification code is not match");
+    }
+
+    isUserExist.isVerifiedEmail = true;
+    isUserExist.emailVerificationCode = '';
+    isUserExist.emailVerificationExpires = '';
+    await isUserExist.save();
+
+    return isUserExist;
+}
+
+// phone verification after email verification
+const createUserWithPhoneService =async(payload)=>{
+    const {email,phone} = payload;
+
+    const isUserExist = await User.findOne({email});
+    if(!isUserExist.isVerifiedEmail){
+        throw new AppError(401, "Email is not verified")
+    }
+     
+    const {code,expiresAt} = generateVerificationCodeAndExpires();
+
+     isUserExist.phoneNumber = phone;
+     isUserExist.phoneVerificationCode = code;
+     isUserExist.phoneVerificationExpires = expiresAt;
+
+     await isUserExist.save();
+  
+    return isUserExist;
+}
+const createUserWithPhoneVerificationService =async(payload)=>{
+    const {email,phone,code} = payload;
+
+    const isUserExist = await User.findOne({email, phoneNumber : phone});
+    
+    if(!isUserExist){
+        throw new AppError(401, "User not found")
+    }
+
+    if(!isUserExist.isVerifiedEmail){
+        throw new AppError(401, "Email is not verified")
+    }
+ 
+    if(isUserExist.phoneVerificationExpires < Date.now() ){
+        throw new AppError(401,"Phone verification code Expired!");
+    }
+
+    if(isUserExist.phoneVerificationCode !== code){
+        throw new AppError(401,"Phone Verification code is not match");
+    }
+
+    isUserExist.isVerifiedPhone = true;
+    isUserExist.phoneVerificationCode = '';
+    isUserExist.phoneVerificationExpires = '';
+    await isUserExist.save();
+
+    return isUserExist;
+}
+
+// identity verification after phone verification
+const createUserWithIdentityVerificationService=async(payload,files)=>{
+    const {email,phone} = payload;
+
+    const isUserExist = await User.findOne({email, phoneNumber : phone});
+    if(!isUserExist){
+        throw new AppError(401, "User not found")
+    }
+
+    if(!isUserExist.isVerifiedEmail){
+        throw new AppError(401, "Email is not verified")
+    }
+ 
+    if(!isUserExist.isVerifiedPhone){
+        throw new AppError(401,"Phone is not verified");
+    }
+     
+    const images = [];
+
+
+    for (let i = 0; i < files.length; i++) {
+         const image = await cloudinary.uploader.upload(files[i].path, { folder: "identity" })
+         images.push(image);
+    }
+
+    
+     
+
+    return images
+}
+
+
+
+
 
 const createUserService =async(payload)=>{
     const {email,password,...rest}= payload;
@@ -31,6 +165,11 @@ const userProfileDetailsService = async(userId)=>{
 
 
 export const userServices = {
+    createUserWithEmailService,
+    createUserWithEmalVerificationService,
+    createUserWithPhoneService,
+    createUserWithPhoneVerificationService,
+    createUserWithIdentityVerificationService,
     createUserService,
-    userProfileDetailsService
+    userProfileDetailsService,
 }

@@ -5,7 +5,7 @@ import { Server } from "socket.io";
 import http from 'http';
 import socketConnection from "./socket/index.js";
 
-let host = "103.145.138.112"
+let host = "103.208.183.248"
 
 let server;
 

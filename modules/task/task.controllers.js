@@ -87,7 +87,6 @@ const getTasksByClientController = asyncHandler(async (req, res) => {
 });
 
 // search task by task title 
-
 const searchTaskByTitleController = asyncHandler(async (req, res) => {
   const { title } = req.query;
 
@@ -112,6 +111,7 @@ export const taskControllers ={
     deleteTaskController,
     getTasksByClientController,
     searchTaskByTitleController
-    
 }
+ 
+
  

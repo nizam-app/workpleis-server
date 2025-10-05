@@ -34,8 +34,6 @@ const socketConnection = (io) => {
                 jobSeeker: String(conv.jobSeeker)
             };
 
-
-
         socket.join(conversationId);
         socket.emit("conversation:joined", { conversationId });
       } catch {

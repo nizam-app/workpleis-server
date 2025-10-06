@@ -10,14 +10,22 @@ const authRouter = Router();
 
 
 authRouter.post('/login',authControllers.authLoginController);
-authRouter.post('/google/login',authControllers.googleLogincontroller);
 authRouter.post('/reset-password',authentication('CLIENT','SERVICE_PROVIDER','ADMIN'), authControllers.resetPasswordController);
+authRouter.post('/forgot-password/send-code',authControllers.forgotPasswordCodeSendController);
+authRouter.post('/forgot-password/verify-code',authControllers.forgotPasswordCodeVerificationController);
+authRouter.put('/forgot-password',authControllers.forgotPasswordController);
 
-authRouter.post('/check',authentication('CLIENT'),(req,res)=>{
-    res.json({
-        message : "you are an athorized user"
-    })
-});
+
+
+
+
+
+
+
+
+
+authRouter.post('/google/login',authControllers.googleLogincontroller);
+
 
 
 

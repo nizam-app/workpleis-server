@@ -2,16 +2,7 @@ import { sendResponse } from "../../utils/sendResponse.js";
 import { forgotPasswordServices } from "./forgot.services.js";
 
 const requestPasswordForgotController = async (req,res) => {
-    const {email} = req.body;
     
-   const result = await forgotPasswordServices.requestPasswordResetService(email);
-
-     sendResponse(res,{
-                statusCode : 201,
-                success : true,
-                message : 'OTP sent to email',
-                data: result
-            });
 };
 
 const verifyPasswordForgotOtpController = async (req,res) => {

@@ -55,24 +55,12 @@ isDeleted: {
       enum: ["ACTIVE", "INACTIVE", "BLOCKED"],
       default: "ACTIVE",
     },
-    isGoogle: {
-      type: Boolean,
-      default: false,
-    },
-    isPaymentVerified :{
-      type: Boolean,
-      default: false
-    },
     isVerifiedEmail: { 
       type: Boolean, 
       default: false 
     },
     isVerifiedPhone: { 
       type: Boolean, 
-      default: false 
-    },
-    isVerifiedIdentity: { 
-      type: Boolean,  
       default: false 
     },
     identityDocs: {
@@ -85,6 +73,9 @@ isDeleted: {
 
     phoneVerificationCode: {type :  String},
     phoneVerificationExpires: {type :  Date},
+
+    forgotPasswordVerificationCode: {type :  String},
+    forgotPasswordVerificationExpires: {type :  Date},
 
     isVerified : {
       type : Boolean,

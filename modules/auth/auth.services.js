@@ -4,8 +4,9 @@ import AppError from '../../utils/appError.js';
 import { envLoader } from '../../config/envs.js';
 import { generateToken } from '../../utils/generateToken.js';
 import admin from '../../config/firebase.config.js';
+import { generateVerificationCodeAndExpires } from '../../utils/generateCodeExpires.js';
 
-
+// user login service 
 const authLoginService = async(payload)=>{
     const {email,password}= payload;
 
@@ -53,6 +54,54 @@ const resetPasswordService = async(email,oldPassword,newPassword)=>{
     await isUserExist.save();
 }
 
+//forgot password code send service 
+const forgotPasswordCodeSendService =async(email)=>{
+    const user = await User.findOne({ email });
+     
+  if (!user) {
+    throw new AppError(404, "User not found");
+}
+
+  const {code, expiresAt} = generateVerificationCodeAndExpires();
+   user.forgotPasswordVerificationCode = code;
+   user.forgotPasswordVerificationExpires = expiresAt;
+
+   await user.save();
+
+   return  {code, expiresAt};
+}
+// forgot password code verification service
+const forgotPasswordCodeVerificationService =async( email, code )=>{
+    const user = await User.findOne({email, forgotPasswordVerificationCode : code});
+     
+    if (!user) {
+        throw new AppError(400, "Invalid OTP");
+    }
+    if (user.forgotPasswordVerificationExpires < Date.now()) {
+        throw new AppError(400, "OTP expired");
+    }
+}
+//forgot password service
+const forgotPasswordService = async (email, code, newPassword) => {
+  const user = await User.findOne({ email, forgotPasswordVerificationCode : code});
+  if (!user) {
+    throw new AppError(400, "Invalid or unverified OTP");
+}
+  if (user.expiresAt < Date.now()) {
+    throw new AppError(400, "OTP expired");
+}
+
+  user.forgotPasswordVerificationCode = '';
+  user.forgotPasswordVerificationExpires = '';
+  user.password = await bcrypt.hash(newPassword, Number(envLoader.BCRYPT_SALT));
+  await user.save();
+};
+
+
+
+
+
+
 
 // login user : google
 const googleLoginservice = async(token)=>{
@@ -90,5 +139,8 @@ const googleLoginservice = async(token)=>{
 export const authServices = {
     authLoginService,
     resetPasswordService,
+    forgotPasswordCodeSendService,
+    forgotPasswordCodeVerificationService,
+    forgotPasswordService,
     googleLoginservice
 }

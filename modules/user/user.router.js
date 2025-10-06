@@ -1,9 +1,9 @@
 
 
 import {Router} from 'express';
-import { userControllers } from '../modules/user/user.controllers.js';
-import { authentication } from '../middlewares/authentication.middleware.js';
-import upload from '../config/multer.config.js';
+import { userControllers } from './user.controllers.js';
+import { authentication } from '../../middlewares/authentication.middleware.js';
+import upload from '../../config/multer.config.js';
 
 
 const userRouter = Router();

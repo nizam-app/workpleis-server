@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { reviewControllers } from "../modules/review/review.controllers.js";
-import { authentication } from "../middlewares/authentication.middleware.js";
+import { reviewControllers } from "./review.controllers.js";
+import { authentication } from "../../middlewares/authentication.middleware.js";
 
 
 

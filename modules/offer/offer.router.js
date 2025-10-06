@@ -1,8 +1,8 @@
 
 
 import {Router} from 'express';
-import { authentication } from '../middlewares/authentication.middleware.js';
-import { offerControllers } from '../modules/offer/offer.controllers.js';
+import { authentication } from '../../middlewares/authentication.middleware.js';
+import { offerControllers } from './offer.controllers.js';
 
 
 const offerRouter = Router();

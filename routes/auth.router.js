@@ -11,6 +11,7 @@ const authRouter = Router();
 
 authRouter.post('/login',authControllers.authLoginController);
 authRouter.post('/google/login',authControllers.googleLogincontroller);
+authRouter.post('/reset-password',authentication('CLIENT','SERVICE_PROVIDER','ADMIN'), authControllers.resetPasswordController);
 
 authRouter.post('/check',authentication('CLIENT'),(req,res)=>{
     res.json({

@@ -9,11 +9,8 @@ import taskRouter from './routes/task.router.js';
 import offerRouter from './routes/offer.router.js';
 import reviewRouter from './routes/review.router.js';
 import forgotPasswordRouter from './routes/forgotPassword.router.js';
-import verificationRouter from './routes/verification.router.js';
 import conversationRouter from './routes/conversation.router.js';
 import appRouter from './routes/app.router.js';
-
-
 
 const app  = express();
 
@@ -27,7 +24,6 @@ app.use('/api/v1/tasks',taskRouter);
 app.use('/api/v1/offers',offerRouter);
 app.use('/api/v1/reviews',reviewRouter);
 app.use('/api/v1/forgot/password',forgotPasswordRouter);
-app.use('/api/v1/verifications',verificationRouter);
 app.use('/api/v1/conversations',conversationRouter);
 app.use('/api/v1/app',appRouter);
 

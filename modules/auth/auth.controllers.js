@@ -28,9 +28,25 @@ const googleLogincontroller = asyncHandler(async(req,res)=>{
     });
 })
 
+const resetPasswordController =asyncHandler(async(req,res)=>{
+    const {email} = req.user;
+    const {oldPassword,newPassword} = req.body;
+
+     console.log();
+    await authServices.resetPasswordService(email,oldPassword,newPassword);
+
+    sendResponse(res,{
+        statusCode : 200,
+        success : true,
+        message : 'Password reset successfull',
+        data : null
+    });
+})
+
 
 
 export const authControllers ={
     authLoginController,
+    resetPasswordController,
     googleLogincontroller
 }

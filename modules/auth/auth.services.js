@@ -27,17 +27,35 @@ const authLoginService = async(payload)=>{
         role : isUserExist.role
     }
     const token = generateToken(tokenPayload,envLoader.JWT_ACCESS_TOKEN_SECRET,envLoader.JWT_ACCESS_TOKEN_EXPIRESIN)
-
+    
+    const user = isUserExist.toObject();
+    delete user.password;
     return {
-        user : isUserExist,
+        user,
         token
     };
+}
+
+// reset password service
+const resetPasswordService = async(email,oldPassword,newPassword)=>{
+     
+    const isUserExist = await User.findOne({email});
+
+    const isCorrectPassword = await bcrypt.compare(oldPassword,isUserExist.password);
+   
+    if(!isCorrectPassword){ 
+        throw new AppError(401,"Old password does not match.");
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, Number(envLoader.BCRYPT_SALT));
+
+    isUserExist.password = hashedPassword;
+    await isUserExist.save();
 }
 
 
 // login user : google
 const googleLoginservice = async(token)=>{
-
     const decoded = await admin.auth().verifyIdToken(token);
     const { email, name, picture } = decoded;
 
@@ -71,5 +89,6 @@ const googleLoginservice = async(token)=>{
 
 export const authServices = {
     authLoginService,
+    resetPasswordService,
     googleLoginservice
 }

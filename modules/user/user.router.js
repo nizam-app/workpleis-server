@@ -24,9 +24,7 @@ userRouter.post('/signup/identity-verification',upload.array('images'),userContr
 userRouter.post('/signup/set-password',userControllers.createUserSetPasswordController);
 
 
-
-
-userRouter.get('/profile',authentication('CLIENT','JOB_SEEKER','ADMIN'),userControllers.userProfileDetailsController);
+// userRouter.get('/profile',authentication('CLIENT','JOB_SEEKER','ADMIN'),userControllers.userProfileDetailsController);
 
 
 

@@ -12,16 +12,19 @@ export const authentication = (...roles)=>async(req  ,res ,next )=>{
         const verified = jwt.verify(token,envLoader.JWT_ACCESS_TOKEN_SECRET);
         const isUserExist = await User.findOne({email : verified.email});
         if(!isUserExist){
-            throw new AppError(404, "User not found")
+            throw new AppError(404, "User not found");
+        }
+        if(!isUserExist.isVerified){
+             throw new AppError(401, `Unvarified user`);
         }
         if(isUserExist.isActive === "BLOCKED" || isUserExist.isActive === "INACTIVE"){
-             throw new AppError(401, `User is ${isUserExist.isActive}`)
+             throw new AppError(401, `User is ${isUserExist.isActive}`);
         }
         if(isUserExist.isDeleted){
-             throw new AppError(401, `User is Deleted`)
+             throw new AppError(401, `User is Deleted`);
         }
         if(!roles.includes((verified).role)){
-            throw new AppError(403,"You can not view this route!")
+            throw new AppError(403,"You can not view this route!");
         }
         req.user = verified;
         next()

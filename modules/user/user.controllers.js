@@ -17,6 +17,7 @@ const createUserWithEmailController = asyncHandler(async(req , res)=>{
         } 
     });
 });
+
 const createUserWithEmailVerificationController = asyncHandler(async(req , res)=>{
     const user = await userServices.createUserWithEmalVerificationService(req.body);
 
@@ -41,11 +42,13 @@ const createUserWithPhoneController = asyncHandler(async(req , res)=>{
         success : true,
         message : `Verifcation code was send by ${user.phoneNumber}`,
         data : {
-            email : user.phoneNumber,
+            email : user.email,
+            phone : user.phoneNumber,
             code : user.phoneVerificationCode
         } 
     });
 });
+
 const createUserWithPhoneVerificationController = asyncHandler(async(req , res)=>{
     const user = await userServices.createUserWithPhoneVerificationService(req.body);
 
@@ -70,7 +73,7 @@ const createUserIdentityVerificationController = asyncHandler(async(req , res)=>
     sendResponse(res,{
         statusCode : 200,
         success : true,
-        message : 'User created',
+        message : 'Identity documents submitted',
         data : user
     });
 });
@@ -88,37 +91,28 @@ const createUserSetPasswordController = asyncHandler(async(req , res)=>{
 });
 
 
+// const createUserController = asyncHandler(async(req , res)=>{
+//     const user = await userServices.createUserService(req.body);
+
+//     sendResponse(res,{
+//         statusCode : 201,
+//         success : true,
+//         message : 'User created',
+//         data : {name : user.name, email : user.email} 
+//     });
+// });
 
 
-
-
-
-
-
-
-
-const createUserController = asyncHandler(async(req , res)=>{
-    const user = await userServices.createUserService(req.body);
-
-    sendResponse(res,{
-        statusCode : 201,
-        success : true,
-        message : 'User created',
-        data : {name : user.name, email : user.email} 
-    });
-});
-
-
-const userProfileDetailsController =asyncHandler(async(req,res)=>{
-    const userId = req.user.id;
-    const data = await userServices.userProfileDetailsService(userId);
-     sendResponse(res,{
-        statusCode : 200,
-        success : true,
-        message : 'User profile data retrived',
-        data  
-    });
-})
+// const userProfileDetailsController =asyncHandler(async(req,res)=>{
+//     const userId = req.user.id;
+//     const data = await userServices.userProfileDetailsService(userId);
+//      sendResponse(res,{
+//         statusCode : 200,
+//         success : true,
+//         message : 'User profile data retrived',
+//         data  
+//     });
+// })
 
  
 
@@ -129,7 +123,5 @@ export const userControllers = {
     createUserWithPhoneController,
     createUserWithPhoneVerificationController,
     createUserIdentityVerificationController,
-    createUserSetPasswordController,
-    createUserController,
-    userProfileDetailsController
+    createUserSetPasswordController
 } 

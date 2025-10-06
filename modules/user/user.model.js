@@ -15,6 +15,9 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Please provide a valid email"],
     },
+    profile : {
+      type : String
+    },
     password: {
       type: String,
       minlength: 6
@@ -30,8 +33,7 @@ const userSchema = new mongoose.Schema(
       default: "INDIVIDUAL",
     },
     address: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Address",
+      type: String
     },
     phoneNumber: {
       type: String,

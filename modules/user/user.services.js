@@ -15,10 +15,15 @@ const createUserWithEmailService =async(payload)=>{
     }
 
     const isUserExist = await User.findOne({email});
+
+    if(isUserExist?.isVerified){
+        throw new AppError(401,"You have already a verified account with this email")
+    }
+
     let user;
     const {code,expiresAt} = generateVerificationCodeAndExpires();
     if(isUserExist){ 
-           isUserExist.emailVerificationCode = code
+          isUserExist.emailVerificationCode = code
           isUserExist.emailVerificationExpires = expiresAt
 
          await isUserExist.save();
@@ -38,14 +43,14 @@ const createUserWithEmailService =async(payload)=>{
 const createUserWithEmalVerificationService =async(payload)=>{
     const {email,code} = payload;
 
-    const isUserExist = await User.findOne({email});
+    const isUserExist = await User.findOne({email, emailVerificationCode : code});
+    
+    if(!isUserExist){
+        throw new AppError(404,"Invalid verification code!")
+    }
  
     if(isUserExist.emailVerificationExpires < Date.now() ){
         throw new AppError(401,"Email verification code Expired!");
-    }
-
-    if(isUserExist.emailVerificationCode !== code){
-        throw new AppError(401,"Email Verification code is not match");
     }
 
     isUserExist.isVerifiedEmail = true;
@@ -61,6 +66,9 @@ const createUserWithPhoneService =async(payload)=>{
     const {email,phone} = payload;
 
     const isUserExist = await User.findOne({email});
+    if(!isUserExist){
+        throw new AppError(404,"User not found")
+    }
     if(!isUserExist.isVerifiedEmail){
         throw new AppError(401, "Email is not verified")
     }
@@ -78,7 +86,8 @@ const createUserWithPhoneService =async(payload)=>{
 const createUserWithPhoneVerificationService =async(payload)=>{
     const {email,phone,code} = payload;
 
-    const isUserExist = await User.findOne({email, phoneNumber : phone});
+    const isUserExist = await User.findOne({
+        email, phoneNumber : phone, phoneVerificationCode : code});
     
     if(!isUserExist){
         throw new AppError(401, "User not found")
@@ -90,10 +99,6 @@ const createUserWithPhoneVerificationService =async(payload)=>{
  
     if(isUserExist.phoneVerificationExpires < Date.now() ){
         throw new AppError(401,"Phone verification code Expired!");
-    }
-
-    if(isUserExist.phoneVerificationCode !== code){
-        throw new AppError(401,"Phone Verification code is not match");
     }
 
     isUserExist.isVerifiedPhone = true;
@@ -158,31 +163,31 @@ const createUserSetPasswordService=async(payload)=>{
 
 
 
-const createUserService =async(payload)=>{
-    const {email,password,...rest}= payload;
+// const createUserService =async(payload)=>{
+//     const {email,password,...rest}= payload;
 
-    const isUserExist = await User.findOne({email});
+//     const isUserExist = await User.findOne({email});
 
-    if(isUserExist){ 
-        throw new AppError(401,"User Already Exist.");
-    }
+//     if(isUserExist){ 
+//         throw new AppError(401,"User Already Exist.");
+//     }
 
-    const hashPassword = await bcrypt.hash(password,Number(envLoader.BCRYPT_SALT));
+//     const hashPassword = await bcrypt.hash(password,Number(envLoader.BCRYPT_SALT));
 
-    const user = await User.create({
-            email,
-            password : hashPassword,
-            ...rest
-        });
+//     const user = await User.create({
+//             email,
+//             password : hashPassword,
+//             ...rest
+//         });
 
-    return user;
-}
+//     return user;
+// }
 
 
-const userProfileDetailsService = async(userId)=>{
-    const profileDetails = await User.findById(userId).select('-password').populate('address');
-    return profileDetails;
-}
+// const userProfileDetailsService = async(userId)=>{
+//     const profileDetails = await User.findById(userId).select('-password').populate('address');
+//     return profileDetails;
+// }
 
 
 export const userServices = {
@@ -191,7 +196,5 @@ export const userServices = {
     createUserWithPhoneService,
     createUserWithPhoneVerificationService,
     createUserWithIdentityVerificationService,
-    createUserSetPasswordService,
-    createUserService,
-    userProfileDetailsService,
+    createUserSetPasswordService
 }

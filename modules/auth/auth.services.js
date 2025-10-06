@@ -10,10 +10,14 @@ import { generateVerificationCodeAndExpires } from '../../utils/generateCodeExpi
 const authLoginService = async(payload)=>{
     const {email,password}= payload;
 
-    const isUserExist = await User.findOne({email});
-
+    const isUserExist = await User.findOne({email}).select('+password');
+    console.log(isUserExist);
     if(!isUserExist){ 
         throw new AppError(404,"User is not found.");
+    }
+    
+    if(!isUserExist.isVerified){
+            throw new AppError(401, `Unvarified user`);
     }
 
     const isCorrectPassword = await bcrypt.compare(password,isUserExist.password);
@@ -31,6 +35,7 @@ const authLoginService = async(payload)=>{
     
     const user = isUserExist.toObject();
     delete user.password;
+
     return {
         user,
         token

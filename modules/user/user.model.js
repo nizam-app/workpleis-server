@@ -75,22 +75,21 @@ isDeleted: {
       type: Boolean,  
       default: false 
     },
-
-    identityFrontDoc: {
-      type: String,  
+    identityDocs: {
+       type : [String]
     },
-    identityBackDoc: {
-      type: String,  
-    },
-    businessIdentityDoc :{
-      type : [String]
-    },
+   
 
     emailVerificationCode: {type : String},
     emailVerificationExpires: {type : Date},
 
     phoneVerificationCode: {type :  String},
     phoneVerificationExpires: {type :  Date},
+
+    isVerified : {
+      type : Boolean,
+      default : false
+    }
   },
   { timestamps: true, versionKey : false }
 );

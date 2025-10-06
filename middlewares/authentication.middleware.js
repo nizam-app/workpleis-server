@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { envLoader } from "../config/envs.js";
 import AppError from "../utils/appError.js";
+import User from '../modules/user/user.model.js';
 
 export const authentication = (...roles)=>async(req  ,res ,next )=>{
     try {
@@ -9,7 +10,16 @@ export const authentication = (...roles)=>async(req  ,res ,next )=>{
         if(!token) throw new AppError(404, "Token not found.");
         
         const verified = jwt.verify(token,envLoader.JWT_ACCESS_TOKEN_SECRET);
-        console.log(roles);
+        const isUserExist = await User.findOne({email : verified.email});
+        if(!isUserExist){
+            throw new AppError(404, "User not found")
+        }
+        if(isUserExist.isActive === "BLOCKED" || isUserExist.isActive === "INACTIVE"){
+             throw new AppError(401, `User is ${isUserExist.isActive}`)
+        }
+        if(isUserExist.isDeleted){
+             throw new AppError(401, `User is Deleted`)
+        }
         if(!roles.includes((verified).role)){
             throw new AppError(403,"You can not view this route!")
         }

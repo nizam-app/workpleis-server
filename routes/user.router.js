@@ -20,6 +20,9 @@ userRouter.post('/signup/phone-verification',userControllers.createUserWithPhone
 // identity verification
 userRouter.post('/signup/identity-verification',upload.array('images'),userControllers.createUserIdentityVerificationController);
 
+// set password and address
+userRouter.post('/signup/set-password',userControllers.createUserSetPasswordController);
+
 
 
 

@@ -67,12 +67,23 @@ const createUserWithPhoneVerificationController = asyncHandler(async(req , res)=
 const createUserIdentityVerificationController = asyncHandler(async(req , res)=>{
     const user = await userServices.createUserWithIdentityVerificationService(req.body,req.files);
     
-
     sendResponse(res,{
         statusCode : 200,
         success : true,
         message : 'User created',
         data : user
+    });
+});
+
+// set password and address
+const createUserSetPasswordController = asyncHandler(async(req , res)=>{
+    await userServices.createUserSetPasswordService(req.body);
+    
+    sendResponse(res,{
+        statusCode : 200,
+        success : true,
+        message : 'Password sumited successfull',
+        data : null
     });
 });
 
@@ -118,6 +129,7 @@ export const userControllers = {
     createUserWithPhoneController,
     createUserWithPhoneVerificationController,
     createUserIdentityVerificationController,
+    createUserSetPasswordController,
     createUserController,
     userProfileDetailsController
 } 

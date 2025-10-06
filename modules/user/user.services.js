@@ -3,7 +3,9 @@ import { envLoader } from "../../config/envs.js";
 import AppError from "../../utils/appError.js";
 import User from "./user.model.js";
 import { generateVerificationCodeAndExpires } from '../../utils/generateCodeExpires.js';
-
+import cloudinary from '../../config/cloudinary.config.js';
+import streamifier from "streamifier";
+import { uploadBufferToCloudinary } from '../../utils/uploadImages.js';
 
 // create user and email verification
 const createUserWithEmailService =async(payload)=>{
@@ -104,8 +106,7 @@ const createUserWithPhoneVerificationService =async(payload)=>{
 
 // identity verification after phone verification
 const createUserWithIdentityVerificationService=async(payload,files)=>{
-    const {email,phone} = payload;
-
+    const {email,phone} = payload; 
     const isUserExist = await User.findOne({email, phoneNumber : phone});
     if(!isUserExist){
         throw new AppError(401, "User not found")
@@ -119,21 +120,41 @@ const createUserWithIdentityVerificationService=async(payload,files)=>{
         throw new AppError(401,"Phone is not verified");
     }
      
-    const images = [];
 
+    const uploadResults = await Promise.all(
+      files.map(file => uploadBufferToCloudinary(file.buffer, "identity"))
+    );
 
-    for (let i = 0; i < files.length; i++) {
-         const image = await cloudinary.uploader.upload(files[i].path, { folder: "identity" })
-         images.push(image);
-    }
-
+    const urls = uploadResults.map(result => result.secure_url);
     
-     
+    isUserExist.identityDocs = urls;
+    await isUserExist.save();
 
-    return images
+    return urls;
 }
 
+const createUserSetPasswordService=async(payload)=>{
+    const {email,phone,password,address} = payload; 
+    const isUserExist = await User.findOne({email, phoneNumber : phone});
+    if(!isUserExist){
+        throw new AppError(401, "User not found")
+    }
 
+    if(!isUserExist.isVerifiedEmail){
+        throw new AppError(401, "Email is not verified")
+    }
+ 
+    if(!isUserExist.isVerifiedPhone){
+        throw new AppError(401,"Phone is not verified");
+    }
+    
+    const hashPassword = await bcrypt.hash(password,Number(envLoader.BCRYPT_SALT));
+
+
+    isUserExist.address = address;
+    isUserExist.password = hashPassword;
+    await isUserExist.save();
+}
 
 
 
@@ -170,6 +191,7 @@ export const userServices = {
     createUserWithPhoneService,
     createUserWithPhoneVerificationService,
     createUserWithIdentityVerificationService,
+    createUserSetPasswordService,
     createUserService,
     userProfileDetailsService,
 }

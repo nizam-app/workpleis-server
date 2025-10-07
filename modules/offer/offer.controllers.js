@@ -2,14 +2,14 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { sendResponse } from "../../utils/sendResponse.js";
 import { offerservices } from "./offer.services.js";
 
-// Job seeker submits offer
+// Service provider submits offer
 const createOfferController = asyncHandler(async (req, res) => {
-const taskId = req.params.id;
-const jobSeekerId = req.user.id;
+const jobId = req.params.id;
+const serviceProviderId = req.user.id;
 
   const offer = await offerservices.createOfferService(
-    taskId,
-    jobSeekerId,
+    jobId,
+    serviceProviderId,
     req.body
   );
 
@@ -22,11 +22,10 @@ const jobSeekerId = req.user.id;
          });
 });
 
-// Get all offers for a task
-const getOffersForTaskController = asyncHandler(async (req, res) => {
-  const taskId = req.params.id;
-  const clientId = req.user.id;
-  const offers = await offerservices.getOffersForTaskService(taskId,clientId);
+// Get offers for a jobs
+const getOffersForJobController = asyncHandler(async (req, res) => {
+  const jobId = req.params.id;
+  const offers = await offerservices.getOffersForJobService(jobId);
   sendResponse(res,{
               statusCode : 200,
               success : true,
@@ -40,12 +39,14 @@ const getOffersForTaskController = asyncHandler(async (req, res) => {
 const acceptOfferController = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const clientId = req.user.id;
-  const offer = await offerservices.acceptOfferService(offerId,clientId);
+
+  await offerservices.acceptOfferService(offerId,clientId);
+
 sendResponse(res,{
              statusCode : 200,
              success : true,
              message : 'Offer Accepted',
-             data: offer,
+             data : null 
          });
 });
 
@@ -53,19 +54,22 @@ sendResponse(res,{
 const rejectOfferController = asyncHandler(async (req, res) => {
   const offerId = req.params.id;
   const clientId = req.user.id;
-  const offer = await offerservices.rejectOfferService(offerId,clientId);
+  const {message} = req.body;
+
+  await offerservices.rejectOfferService(offerId,clientId,message);
+
   sendResponse(res,{
              statusCode : 200,
              success : true,
              message : 'Offer rejected',
-             data: offer,
+             data:  null
          });
 });
 
 
 export const offerControllers={
   createOfferController,
-  getOffersForTaskController,
+  getOffersForJobController,
   acceptOfferController,
   rejectOfferController
 }

@@ -2,12 +2,12 @@ import mongoose from "mongoose";
 
 const offerSchema = new mongoose.Schema(
   {
-    task: {
+    job: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Task",
+      ref: "Job",
       required: true,
     },
-    jobSeeker: {
+    serviceProvider: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -18,8 +18,7 @@ const offerSchema = new mongoose.Schema(
       min: [1, "Price must be greater than 0"],
     },
     message: {
-      type: String,
-      maxlength: 1000,
+      type: String
     },
     completionTime: {
       type: String,  
@@ -27,9 +26,12 @@ const offerSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected"],
-      default: "pending",
+      enum: ["Pending", "Accepted", "Rejected"],
+      default: "Pending",
     },
+    rejectionmessage: {
+      type: String
+    }
   },
   { timestamps: true, versionKey : false }
 );

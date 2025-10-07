@@ -11,13 +11,17 @@ const authLoginService = async(payload)=>{
     const {email,password}= payload;
 
     const isUserExist = await User.findOne({email}).select('+password');
-    console.log(isUserExist);
+     
     if(!isUserExist){ 
         throw new AppError(404,"User is not found.");
     }
+    if(!isUserExist.password){ 
+        throw new AppError(401,"Please setup your password and try again");
+    }
+
     
     if(!isUserExist.isVerified){
-            throw new AppError(401, `Unvarified user`);
+        throw new AppError(401, `Unvarified user`);
     }
 
     const isCorrectPassword = await bcrypt.compare(password,isUserExist.password);

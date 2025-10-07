@@ -1,5 +1,6 @@
 import AppError from "../../utils/appError.js";
 import { uploadBufferToCloudinary } from "../../utils/uploadImages.js";
+import Offer from "../offer/offer.model.js";
 import Job from "./job.model.js";
 
 

@@ -69,7 +69,7 @@ const getJobDetailsController = asyncHandler(async (req, res) => {
        });
 });
 
-// Get all jobs created by a specific client
+// Get my jobs
 const getjobsByClientController = asyncHandler(async (req, res) => {
   const clientId = req.user.id;
   const jobs = await jobServices.getJobsByClientService(clientId);
@@ -84,6 +84,24 @@ const getjobsByClientController = asyncHandler(async (req, res) => {
            }
        });
 });
+
+// Get jobs posted by a client 
+const getJobsForClientController = asyncHandler(async (req, res) => {
+  const clientId = req.params.id;
+  const jobs = await jobServices.getJobsByClientService(clientId);
+
+  sendResponse(res,{
+           statusCode : 200,
+           success : true,
+           message : 'All jobs retrived for a specific client',
+           data: jobs,
+           meta : {
+            count : jobs.length
+           }
+       });
+});
+
+
 
 // search job by job title 
 const searchJobByTitleController = asyncHandler(async (req, res) => {
@@ -107,6 +125,7 @@ export const jobControllers ={
     getAllJobsController,
     getJobDetailsController,
     getjobsByClientController,
+    getJobsForClientController,
     searchJobByTitleController
 }
  

@@ -2,17 +2,17 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import { sendResponse } from "../../utils/sendResponse.js";
 import { reviewServices } from "./review.services.js";
 
+
+// create review 
 const createReviewController = asyncHandler(async (req, res) => {
-  const { to, rating, comment } = req.body;
   
-  const taskId = req.params.id;
+  const jobId = req.params.id;
   const from = req.user.id;
 
   const review = await reviewServices.createReviewService(
-    taskId,
+    jobId,
     from,      
-    to,
-    { rating, comment }
+    req.body
   );
   
 sendResponse(res,{

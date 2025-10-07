@@ -1,52 +1,49 @@
 import AppError from "../../utils/appError.js";
-import Task from "../task/task.model.js";
+import Job from "../job/job.model.js";
 import User from "../user/user.model.js";
 import Review from "./review.model.js";
 
-const createReviewService = async (taskId, fromUserId, toUserId, payload) => {
+const createReviewService = async (jobId,from,payload) => {
+  
 
-    
-  const task = await Task.findById(taskId);
-  if (!task) {
-    throw new AppError(404, "Task not found");
+  const job = await Job.findById(jobId);
+  
+  if (!job) {
+    throw new AppError(404, "Job not found");
   }
 
-  // Reviews only allowed in progress or completed
-  if (!["in_progress", "completed"].includes(task.status)) {
-    throw new AppError(400, "Reviews can only be given when task is in progress or completed");
+  // Reviews only allowed in Delivered
+  if (job.status !== 'Delivered') {
+    throw new AppError(400, "Reviews can only be given when job is in Delivered");
   }
 
-   // Validate users belong to task
+   // Validate users belong to job
   if (
-    String(task.createdBy) !== String(fromUserId) &&
-    String(task.assignedTo) !== String(fromUserId)
+    String(job.createdBy) !== String(from) &&
+    String(job.assignedTo) !== String(from)
   ) {
-    throw new AppError(403, "You are not part of this task, cannot leave a review");
-  }
-
-  if (
-    String(task.createdBy) !== String(toUserId) &&
-    String(task.assignedTo) !== String(toUserId)
-  ) {
-    throw new AppError(400, "The user you are reviewing is not part of this task");
-  }
-
-  if (String(fromUserId) === String(toUserId)) {
-    throw new AppError(400, "You cannot review yourself");
+    throw new AppError(403, "You are not part of this job, cannot leave a review");
   }
 
   // Prevent duplicate reviews
-  const existingReview = await Review.findOne({ task: taskId, from: fromUserId });
+  const existingReview = await Review.findOne({ job: job._id, from});
   if (existingReview) {
-    throw new AppError(400, "You have already submitted a review for this task");
+    throw new AppError(400, "You have already submitted a review for this job");
   }
 
+  let to; 
+
+  if(from === job.createdBy){
+    to = String(job.assignedTo)
+  }else{
+    to = String(job.createdBy)
+  }
 
   // Create review
   const newReview = new Review({
-    task: taskId,
-    from: fromUserId,
-    to: toUserId,
+    job: job._id,
+    from: from,
+    // to:,
     ...payload,
   })
 

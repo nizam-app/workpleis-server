@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const reviewSchema = new mongoose.Schema(
   {
-    task: {
+    job: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Task",
+      ref: "Job",
       required: true,
     },
     from: {

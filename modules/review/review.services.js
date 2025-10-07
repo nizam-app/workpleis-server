@@ -4,7 +4,7 @@ import User from "../user/user.model.js";
 import Review from "./review.model.js";
 
 const createReviewService = async (jobId,from,payload) => {
-  
+  const {rating,comment} = payload;
 
   const job = await Job.findById(jobId);
   
@@ -43,20 +43,20 @@ const createReviewService = async (jobId,from,payload) => {
   const newReview = new Review({
     job: job._id,
     from: from,
-    // to:,
-    ...payload,
+    to,
+    rating,
+    comment
   })
 
    await newReview.save();
 
 
   // --- Update User's average rating (the one receiving the review) ---
-  const userReviews = await Review.find({ to: toUserId });
+  const userReviews = await Review.find({ to });
 
   const userAvgRating = userReviews.reduce((sum, r) => sum + r.rating, 0) / userReviews.length;
  
-  await User.findByIdAndUpdate(toUserId, { ratings: userAvgRating });
-
+  await User.findByIdAndUpdate(to, { ratings: userAvgRating });
 
   return newReview;
 };

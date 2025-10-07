@@ -7,8 +7,8 @@ import { authentication } from "../../middlewares/authentication.middleware.js";
 const reviewRouter = Router();
 
 
-
-reviewRouter.post('/:id',authentication('JOB_SEEKER','CLIENT'), reviewControllers.createReviewController);
+//create review 
+reviewRouter.post('/:id',authentication('SERVICE_PROVIDER','CLIENT','ADMIN'), reviewControllers.createReviewController);
 
 
 
